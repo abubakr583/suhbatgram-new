@@ -295,6 +295,8 @@ public class ApplicationLoader extends Application {
         }
 
         super.onCreate();
+        AyuConfig.loadConfig();
+AyuAutoMessageManager.startScheduledSender(UserConfig.selectedAccount);
 
         // The widget engine's isolated process has no files, network or accounts: none of the client starts there.
         if (org.telegram.utils.twidget.WidgetEngineService.isEngineProcess()) {
