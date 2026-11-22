@@ -10561,7 +10561,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (statusRequest != 0) {
                             getConnectionsManager().cancelRequest(statusRequest, true);
                         }
-
+if (AyuConfig.ghostMode && AyuConfig.hideOnlineStatus) {
+    return;
+}
                         TL_account.updateStatus req = new TL_account.updateStatus();
                         req.offline = false;
                         statusRequest = getConnectionsManager().sendRequest(req, (response, error) -> {
