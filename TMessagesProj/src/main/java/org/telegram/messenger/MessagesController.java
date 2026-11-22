@@ -21000,6 +21000,11 @@ if (AyuConfig.ghostMode && AyuConfig.hideOnlineStatus) {
                 for (int a = 0, size = messagesFinal.size(); a < size; a++) {
                     long key = messagesFinal.keyAt(a);
                     ArrayList<MessageObject> value = messagesFinal.valueAt(a);
+                    if (value != null) {
+    for (MessageObject msgObj : value) {
+        AyuAutoMessageManager.checkIncomingMessage(currentAccount, msgObj);
+    }
+}
                     if (updateInterfaceWithMessages(key, value, 0)) {
                         sorted = true;
                     }
