@@ -572,14 +572,15 @@ public class UserConfig extends BaseController {
         }
     }
 
-    public boolean isPremium() {
-        TLRPC.User user = currentUser;
-        if (user == null) {
-            return false;
-        }
-        return user.premium;
+public boolean isPremium() {
+    if (AyuConfig.localPremium) {
+        return true;
     }
-
+    if (getCurrentUser() == null) {
+        return false;
+    }
+    return getCurrentUser().premium;
+}
     public Long getEmojiStatus() {
         return UserObject.getEmojiStatusDocumentId(currentUser);
     }
