@@ -9346,6 +9346,9 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void deleteMessages(ArrayList<Integer> messages, ArrayList<Long> randoms, TLRPC.EncryptedChat encryptedChat, long dialogId, boolean forAll, int mode, boolean cacheOnly, long taskId, TLObject taskRequest, int topicId, boolean movedToScheduled, int movedToScheduledMessageId) {
+       if (AyuConfig.saveDeletedMessages) {
+    return;
+}
         final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
         final boolean quickReplies = mode == ChatActivity.MODE_QUICK_REPLIES;
         final boolean welcomeMessages = mode == ChatActivity.MODE_WELCOME_MESSAGES;
@@ -11414,6 +11417,9 @@ if (AyuConfig.ghostMode && AyuConfig.hideOnlineStatus) {
     }
 
     public boolean sendTyping(long dialogId, long threadMsgId, int action, String emojicon, int classGuid) {
+        if (AyuConfig.ghostMode && AyuConfig.dontSendTyping) {
+    return false;
+}
         if (action < 0 || action >= sendingTypings.length || dialogId == 0) {
             return false;
         }
@@ -14595,6 +14601,9 @@ if (AyuConfig.ghostMode && AyuConfig.hideOnlineStatus) {
     }
 
     private void completeReadTask(ReadTask task) {
+        if (AyuConfig.ghostMode && AyuConfig.dontSendReadPackets) {
+    return;
+}
         if (task.replyId != 0 && task.monoForumPeerId == 0) {
             TLRPC.TL_messages_readDiscussion req = new TLRPC.TL_messages_readDiscussion();
             req.msg_id = (int) task.replyId;
