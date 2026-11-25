@@ -1,110 +1,47 @@
 package org.telegram.messenger;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.text.TextUtils;
+import java.util.HashMap;
 
-public class AyuConfig {
-    private static SharedPreferences preferences;
+public class AyuAutoMessageManager {
 
-    public static boolean localPremium = true;
-    public static boolean ghostMode = false;
-    public static boolean hideOnlineStatus = false;
-    public static boolean dontSendReadPackets = false;
-    public static boolean dontSendTyping = false;
+    private static final HashMap<Long, Long> lastReplyTime = new HashMap<>();
+    private static final long COOLDOWN_MS = 60_000L;
 
-    public static boolean saveDeletedMessages = true;
-    public static boolean saveDeletedChats = true;
+    public static void checkIncomingMessage(int currentAccount, MessageObject msgObj) {
+        if (msgObj == null || msgObj.messageOwner == null) return;
+        if (!AyuConfig.autoReplyEnabled) return;
+        if (msgObj.isOut() || msgObj.isOutOwner()) return;
 
-    public static boolean autoReplyEnabled = false;
-    public static String autoReplyKeyword = "salom";
-    public static String autoReplyText = "Assalomu alaykum! Hozir bandman, tez orada javob beraman.";
+        long dialogId = msgObj.getDialogId();
+        if (dialogId <= 0) return;
 
-    static {
-        load();
-    }
+        CharSequence textSeq = msgObj.messageText;
+        if (TextUtils.isEmpty(textSeq)) return;
 
-    private static SharedPreferences getPrefs() {
-        if (preferences == null && ApplicationLoader.applicationContext != null) {
-            preferences = ApplicationLoader.applicationContext.getSharedPreferences("ayuconfig", Context.MODE_PRIVATE);
+        String incoming = textSeq.toString().toLowerCase().trim();
+        String keyword = AyuConfig.autoReplyKeyword != null ? AyuConfig.autoReplyKeyword.toLowerCase().trim() : "";
+
+        if (!TextUtils.isEmpty(keyword) && !incoming.contains(keyword)) {
+            return;
         }
-        return preferences;
-    }
 
-    public static void load() {
-        SharedPreferences prefs = getPrefs();
-        if (prefs == null) return;
-        localPremium = prefs.getBoolean("localPremium", true);
-        ghostMode = prefs.getBoolean("ghostMode", false);
-        hideOnlineStatus = prefs.getBoolean("hideOnlineStatus", false);
-        dontSendReadPackets = prefs.getBoolean("dontSendReadPackets", false);
-        dontSendTyping = prefs.getBoolean("dontSendTyping", false);
-        saveDeletedMessages = prefs.getBoolean("saveDeletedMessages", true);
-        saveDeletedChats = prefs.getBoolean("saveDeletedChats", true);
-        autoReplyEnabled = prefs.getBoolean("autoReplyEnabled", false);
-        autoReplyKeyword = prefs.getString("autoReplyKeyword", "salom");
-        autoReplyText = prefs.getString("autoReplyText", "Assalomu alaykum! Hozir bandman, tez orada javob beraman.");
-    }
-
-    private static void saveBoolean(String key, boolean value) {
-        SharedPreferences prefs = getPrefs();
-        if (prefs != null) {
-            prefs.edit().putBoolean(key, value).apply();
+        long now = System.currentTimeMillis();
+        Long last = lastReplyTime.get(dialogId);
+        if (last != null && (now - last) < COOLDOWN_MS) {
+            return;
         }
-    }
+        lastReplyTime.put(dialogId, now);
 
-    public static void toggleLocalPremium() {
-        localPremium = !localPremium;
-        saveBoolean("localPremium", localPremium);
-    }
+        String replyText = AyuConfig.autoReplyText;
+        if (TextUtils.isEmpty(replyText)) return;
 
-    public static void toggleGhostMode() {
-        ghostMode = !ghostMode;
-        saveBoolean("ghostMode", ghostMode);
-    }
-
-    public static void toggleHideOnlineStatus() {
-        hideOnlineStatus = !hideOnlineStatus;
-        saveBoolean("hideOnlineStatus", hideOnlineStatus);
-    }
-
-    public static void toggleDontSendReadPackets() {
-        dontSendReadPackets = !dontSendReadPackets;
-        saveBoolean("dontSendReadPackets", dontSendReadPackets);
-    }
-
-    public static void toggleDontSendTyping() {
-        dontSendTyping = !dontSendTyping;
-        saveBoolean("dontSendTyping", dontSendTyping);
-    }
-
-    public static void toggleSaveDeletedMessages() {
-        saveDeletedMessages = !saveDeletedMessages;
-        saveBoolean("saveDeletedMessages", saveDeletedMessages);
-    }
-
-    public static void toggleSaveDeletedChats() {
-        saveDeletedChats = !saveDeletedChats;
-        saveBoolean("saveDeletedChats", saveDeletedChats);
-    }
-
-    public static void toggleAutoReplyEnabled() {
-        autoReplyEnabled = !autoReplyEnabled;
-        saveBoolean("autoReplyEnabled", autoReplyEnabled);
-    }
-
-    public static void setAutoReplyKeyword(String keyword) {
-        autoReplyKeyword = keyword;
-        SharedPreferences prefs = getPrefs();
-        if (prefs != null) {
-            prefs.edit().putString("autoReplyKeyword", keyword).apply();
-        }
-    }
-
-    public static void setAutoReplyText(String text) {
-        autoReplyText = text;
-        SharedPreferences prefs = getPrefs();
-        if (prefs != null) {
-            prefs.edit().putString("autoReplyText", text).apply();
-        }
+        AndroidUtilities.runOnUIThread(() -> {
+            SendMessagesHelper.SendMessageParams params = new SendMessagesHelper.SendMessageParams();
+            params.message = replyText;
+            params.peer = dialogId;
+            params.notify = true;
+            SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
+        });
     }
 }
