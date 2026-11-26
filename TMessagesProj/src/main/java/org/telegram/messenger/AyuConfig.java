@@ -45,6 +45,10 @@ public class AyuConfig {
         autoReplyText = prefs.getString("autoReplyText", "Assalomu alaykum! Hozir bandman, tez orada javob beraman.");
     }
 
+    public static void loadConfig() {
+        load();
+    }
+
     private static void saveBoolean(String key, boolean value) {
         SharedPreferences prefs = getPrefs();
         if (prefs != null) {
