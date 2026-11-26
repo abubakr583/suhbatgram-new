@@ -8,6 +8,9 @@ public class AyuAutoMessageManager {
     private static final HashMap<Long, Long> lastReplyTime = new HashMap<>();
     private static final long COOLDOWN_MS = 60_000L;
 
+    public static void startScheduledSender(int account) {
+    }
+
     public static void checkIncomingMessage(int currentAccount, MessageObject msgObj) {
         if (msgObj == null || msgObj.messageOwner == null) return;
         if (!AyuConfig.autoReplyEnabled) return;
